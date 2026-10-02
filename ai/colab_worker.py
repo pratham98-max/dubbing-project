@@ -27,16 +27,11 @@ def run_full_pipeline(video_path, target_language, output_path):
     torch.cuda.empty_cache()
     
     print("Synthesizing audio (Fallback Generic Voice)...")
-    # Using edge-tts because Colab Python 3.12 broke Coqui-TTS compilation
     lang_map = {"eng_Latn": "en-US-AriaNeural", "spa_Latn": "es-ES-ElviraNeural", "hin_Deva": "hi-IN-SwaraNeural", "fra_Latn": "fr-FR-DeniseNeural"}
     voice = lang_map.get(target_language, "en-US-AriaNeural")
     
-    import edge_tts
-    import asyncio
-    async def generate_audio():
-        communicate = edge_tts.Communicate(translated_text, voice)
-        await communicate.save("tts_out.mp3")
-    asyncio.run(generate_audio())
+    # Use CLI to avoid asyncio conflicts inside FastAPI
+    subprocess.run(["edge-tts", "--text", translated_text, "--voice", voice, "--write-media", "tts_out.mp3"], check=True)
     
     # Convert mp3 to wav for Wav2Lip
     subprocess.run(["ffmpeg", "-y", "-i", "tts_out.mp3", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "tts_out.wav"], check=True)
