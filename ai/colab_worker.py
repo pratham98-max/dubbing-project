@@ -32,10 +32,12 @@ def run_full_pipeline(video_path, target_language, output_path):
     torch.cuda.empty_cache()
     
     print("Synthesizing audio with XTTS-v2...")
+    os.environ["COQUI_TOS_AGREED"] = "1"
     from TTS.api import TTS
     # Mapping nllb lang to xtts lang
     lang_map = {"eng_Latn": "en", "spa_Latn": "es", "hin_Deva": "hi", "fra_Latn": "fr"}
     tts_lang = lang_map.get(target_language, "en")
+
     
     # We use Piper as fallback if XTTS requires terms agreement, but we will try XTTS
     tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
