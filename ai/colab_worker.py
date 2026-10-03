@@ -19,11 +19,20 @@ def run_full_pipeline(video_path, target_language, output_path):
     torch.cuda.empty_cache()
     
     print("Translating with NLLB...")
-    from transformers import pipeline
-    translator = pipeline("translation", model="facebook/nllb-200-distilled-600M", device=0 if device=="cuda" else -1)
-    translated_text = translator(text, src_lang="eng_Latn", tgt_lang=target_language)[0]['translation_text']
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    
+    tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M")
+    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M").to(device)
+    
+    inputs = tokenizer(text, return_tensors="pt").to(device)
+    translated_tokens = model.generate(
+        **inputs, forced_bos_token_id=tokenizer.lang_code_to_id[target_language], max_length=200
+    )
+    translated_text = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
+    
     print(f"Translated text: {translated_text}")
-    del translator
+    del model
+    del tokenizer
     torch.cuda.empty_cache()
     
     print("Synthesizing audio (Fallback Generic Voice)...")
