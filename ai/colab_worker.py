@@ -25,8 +25,9 @@ def run_full_pipeline(video_path, target_language, output_path):
     model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M", use_safetensors=True).to(device)
     
     inputs = tokenizer(text, return_tensors="pt").to(device)
+    forced_id = tokenizer.convert_tokens_to_ids(target_language)
     translated_tokens = model.generate(
-        **inputs, forced_bos_token_id=tokenizer.lang_code_to_id[target_language], max_length=200
+        **inputs, forced_bos_token_id=forced_id, max_length=200
     )
     translated_text = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
     
