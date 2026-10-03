@@ -22,7 +22,7 @@ def run_full_pipeline(video_path, target_language, output_path):
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
     
     tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M")
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M").to(device)
+    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M", use_safetensors=True).to(device)
     
     inputs = tokenizer(text, return_tensors="pt").to(device)
     translated_tokens = model.generate(
