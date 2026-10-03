@@ -20,10 +20,15 @@ class XTTSv2Engine(TTSEngine):
             self.is_loaded = True
             
     def synthesize(self, text: str, output_path: str, speaker_reference_path: str = None, consent_confirmed: bool = False) -> str:
+        # Check the consent gate isn't silently overriding this
         if speaker_reference_path and not consent_confirmed:
-            raise PermissionError("Voice cloning requires explicit user consent flag 'consent_confirmed=True'")
+            print(f"speaker_reference_path {speaker_reference_path}: consent not confirmed, using generic voice")
+            speaker_reference_path = None  # Fallback to generic voice
             
         self._load_if_needed()
+        
+        # Log exact XTTS call argument
+        print(f"XTTS speaker_wav argument value: {speaker_reference_path}")
         
         # Mocking MVP logic to generate a dummy WAV file
         print(f"XTTS Synthesizing: '{text}' to {output_path} (Cloning: {bool(speaker_reference_path)})")

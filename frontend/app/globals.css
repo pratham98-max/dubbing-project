@@ -1,0 +1,1 @@
+﻿:root { --paper: #F2F4F3; --ink: #14181C; --reel-teal: #1C6E6E; --tally-amber: #E8A33D; --clay: #B84A2E; } body { margin: 0; background-color: var(--paper); color: var(--ink); font-family: "Inter", sans-serif; -webkit-font-smoothing: antialiased; } * { box-sizing: border-box; }

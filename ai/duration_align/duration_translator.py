@@ -48,6 +48,7 @@ class DurationAwareTranslator:
         
         # 4. Rewrite logic (MVP heuristic: remove filler words if too long)
         final_text = translated
+        pre_rewrite_est = est_duration
         if ratio > 1.15:
             # simple mock rewrite: drop known filler words
             for filler in [" actually", " literally", " basically", " just", " you know"]:
@@ -58,4 +59,9 @@ class DurationAwareTranslator:
             segment.target_duration_estimate_sec = est_duration
             
         segment.duration_adjusted_text = final_text.strip()
+        
+        # Log exact duration checks per requirement
+        print(f"Duration Log -> segment_id: {getattr(segment, 'id', 'unknown')}, source duration: {slot_duration:.2f}s, "
+              f"translated estimate: {pre_rewrite_est:.2f}s, post-rewrite estimate: {est_duration:.2f}s")
+              
         return segment

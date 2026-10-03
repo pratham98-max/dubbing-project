@@ -31,7 +31,8 @@ def process_pipeline(job_id: str, input_path: str, target_language: str):
                 response = requests.post(
                     colab_url,
                     files={"video_file": f},
-                    data={"target_language": target_language}
+                    data={"target_language": target_language},
+                    headers={"ngrok-skip-browser-warning": "1"}
                 )
             if response.status_code == 200:
                 with open(output_path, "wb") as f_out:

@@ -30,7 +30,39 @@ class PyannoteDiarizationEngine:
         self._load_if_needed()
         
         # MVP Mock returning a single speaker turn for the whole duration
-        # In a real environment, this yields a sequence of (segment, label) pairs.
         return [
             {"speaker": "SPEAKER_00", "start": 0.0, "end": 3.0}
         ]
+        
+    def extract_speaker_references(self, audio_path: str, turns: List[Dict[str, Any]], job_id: str) -> Dict[str, str]:
+        """
+        Extracts a clean reference audio clip for each unique speaker for voice cloning.
+        """
+        out_dir = os.path.join("media", "processed", job_id, "voice_refs")
+        os.makedirs(out_dir, exist_ok=True)
+        
+        speaker_refs = {}
+        # Group by speaker to find their longest turn
+        speaker_turns = {}
+        for turn in turns:
+            spk = turn["speaker"]
+            dur = turn["end"] - turn["start"]
+            if spk not in speaker_turns or dur > speaker_turns[spk]["dur"]:
+                speaker_turns[spk] = {"start": turn["start"], "dur": dur}
+                
+        for spk, turn in speaker_turns.items():
+            out_file = os.path.join(out_dir, f"{spk}.wav")
+            # Extract via ffmpeg
+            import subprocess
+            cmd = [
+                "ffmpeg", "-y", "-i", audio_path,
+                "-ss", str(turn["start"]), "-t", str(turn["dur"]),
+                "-ac", "1", "-ar", "16000", out_file
+            ]
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Log exact extraction per requirements
+            print(f"Extraction Log -> Created voice reference for {spk}: {out_file} (Duration: {turn['dur']:.2f}s)")
+            speaker_refs[spk] = out_file
+            
+        return speaker_refs

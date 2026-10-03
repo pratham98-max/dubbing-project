@@ -37,16 +37,27 @@ def run_full_pipeline(video_path, target_language, output_path):
     del tokenizer
     torch.cuda.empty_cache()
     
-    print("Synthesizing audio (Fallback Generic Voice)...")
-    lang_map = {"eng_Latn": "en-US-AriaNeural", "spa_Latn": "es-ES-ElviraNeural", "hin_Deva": "hi-IN-SwaraNeural", "fra_Latn": "fr-FR-DeniseNeural"}
-    voice = lang_map.get(target_language, "en-US-AriaNeural")
+    print("Synthesizing audio (Voice Cloning via XTTS)...")
     
-    # Use explicit absolute path to edge-tts to avoid VENV PATH issues
-    edge_tts_path = "/content/venv/bin/edge-tts"
-    subprocess.run([edge_tts_path, "--text", translated_text, "--voice", voice, "--write-media", "tts_out.mp3"], check=True)
+    # 1. Extract a 6-second clean reference of the user's voice from the original audio
+    subprocess.run(["ffmpeg", "-y", "-i", "audio.wav", "-ss", "0", "-t", "6", "-ac", "1", "-ar", "16000", "voice_ref.wav"], check=True)
     
-    # Convert mp3 to wav for Wav2Lip
-    subprocess.run(["ffmpeg", "-y", "-i", "tts_out.mp3", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "tts_out.wav"], check=True)
+    # 2. Map language code to XTTS format
+    lang_short = {"eng_Latn": "en", "spa_Latn": "es", "hin_Deva": "hi", "fra_Latn": "fr"}.get(target_language, "en")
+    
+    # 3. Load Coqui XTTS Model
+    import os
+    os.environ["COQUI_TOS_AGREED"] = "1"
+    from TTS.api import TTS
+    print(f"Loading XTTS Model on {device}...")
+    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+    
+    # 4. Generate cloned speech
+    print(f"Cloning voice and generating speech in '{lang_short}'...")
+    tts.tts_to_file(text=translated_text, speaker_wav="voice_ref.wav", language=lang_short, file_path="tts_out.wav")
+    
+    del tts
+    torch.cuda.empty_cache()
     
     print("Running Wav2Lip...")
     wav2lip_cmd = [

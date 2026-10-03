@@ -4,6 +4,9 @@ services:
     build: 
       context: .
       dockerfile: backend/Dockerfile
+    environment:
+      - PIPELINE_MODE=${PIPELINE_MODE}
+      - COLAB_INFERENCE_URL=${COLAB_INFERENCE_URL}
     ports:
       - "8000:8000"
     volumes:
